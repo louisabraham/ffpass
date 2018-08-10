@@ -120,11 +120,11 @@ ffpass export --to passwords.csv
   - `ffpass export: error: the following arguments are required:
     -d/--directory/--dir`
     
-    It means either that (launch with option `--verbose` to
-        know):
+    It means one of the following (launch with option `--verbose` to
+    know):
     
-        - Automatic profile selection is not supported for your platform.
-        - There is more than one user profile for Firefox.
+      - Automatic profile selection is not supported for your platform.
+      - There is more than one user profile for Firefox.
     
     You have to provide the `--dir` option with your Firefox Profile
     Folder. To find it, follow these
