@@ -143,3 +143,9 @@ Troubleshoot
    Folder. To find it, follow these
    `instructions <https://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data#w_how-do-i-find-my-profile>`__
    on the website of Firefox.
+
+Credits
+-------
+
+Thanks a lot to @lclevy for the retro-engineering! I was inspired by his
+repository https://github.com/lclevy/firepwd.
