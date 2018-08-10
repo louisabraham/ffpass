@@ -1,7 +1,7 @@
 pypi: dist
 	twine upload dist/*
 	
-dist: flake8
+dist: doc flake8
 	-rm dist/*
 	./setup.py sdist bdist_wheel
 
