@@ -19,7 +19,7 @@ setup(
     url='https://github.com/louisabraham/ffpass',
     packages=['ffpass'],
     install_requires=['pyasn1', 'Crypto'],
-    python_requires='>=3',
+    python_requires='>=3.5',
     entry_points={'console_scripts': ['ffpass = ffpass:main']},
     classifiers=[
         'Topic :: Utilities',
