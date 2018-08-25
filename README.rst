@@ -10,6 +10,8 @@ provide these features.
 Installation
 ------------
 
+ffpass requires Python 3.5+ and will work with Firefox 58+
+
 .. code:: bash
 
    pip install ffpass
