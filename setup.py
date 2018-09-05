@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name='ffpass',
-    version='0.3.2',
+    version='0.3.3',
     author='Louis Abraham',
     license='MIT',
     author_email='louis.abraham@yahoo.fr',
@@ -18,7 +18,7 @@ setup(
     long_description=read('README.rst'),
     url='https://github.com/louisabraham/ffpass',
     packages=['ffpass'],
-    install_requires=['pyasn1', 'Crypto'],
+    install_requires=['pyasn1', 'pycrypto'],
     python_requires='>=3.5',
     entry_points={'console_scripts': ['ffpass = ffpass:main']},
     classifiers=[
