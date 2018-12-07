@@ -16,6 +16,10 @@ example of usage:
     
     ffpass import --from passwords.csv
 
+\033[0m\033[1;32m\033[F\033[F
+
+If you found this code useful, add a star on <https://github.com/louisabraham/ffpass>!
+
 \033[0m\033[F\033[F
 """
 

@@ -18,8 +18,8 @@ pip install ffpass
 
 ## Features
 
-  - Support master passwords
-  - Automatic profile selection for Linux and macOS
+  - Supports master passwords
+  - Automatic profile selection for Linux, macOS and Windows
   - Export to CSV
   - Import from CSV compatible with Google Chrome
 
@@ -86,7 +86,7 @@ By default, it works with the passwords exported from Google Chrome.
     computer, and save the file to `passwords.csv` (or any other
     available name).
 
-*(instructions from https://support.1password.com/import-chrome/)*
+*(instructions from <https://support.1password.com/import-chrome/>)*
 
 ### Import in Firefox
 
@@ -136,4 +136,4 @@ ffpass export --to passwords.csv
 ## Credits
 
 Thanks a lot to @lclevy for the retro-engineering\! I was inspired by
-his repository https://github.com/lclevy/firepwd.
+his repository <https://github.com/lclevy/firepwd>.

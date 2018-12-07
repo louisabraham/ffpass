@@ -19,8 +19,8 @@ ffpass requires Python 3.5+ and will work with Firefox 58+
 Features
 --------
 
--  Support master passwords
--  Automatic profile selection for Linux and macOS
+-  Supports master passwords
+-  Automatic profile selection for Linux, macOS and Windows
 -  Export to CSV
 -  Import from CSV compatible with Google Chrome
 
@@ -97,7 +97,7 @@ Export from Google Chrome
    computer, and save the file to ``passwords.csv`` (or any other
    available name).
 
-*(instructions from https://support.1password.com/import-chrome/)*
+*(instructions from*\ https://support.1password.com/import-chrome/\ *)*
 
 Import in Firefox
 ~~~~~~~~~~~~~~~~~
