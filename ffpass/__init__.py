@@ -34,6 +34,7 @@ from datetime import datetime
 import configparser
 from urllib.parse import urlparse
 import sqlite3
+import os.path
 
 from pyasn1.codec.der.decoder import decode as der_decode
 from pyasn1.codec.der.encoder import encode as der_encode
@@ -200,6 +201,8 @@ def guessDir():
     dirs = {
         "darwin": "~/Library/Application Support/Firefox",
         "linux": "~/.mozilla/firefox",
+        "win32": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox"),
+        "cygwin": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox"),
     }
     if sys.platform in dirs:
         path = Path(dirs[sys.platform]).expanduser()
