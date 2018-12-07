@@ -1,3 +1,5 @@
+|Downloads|
+
 ffpass - Import and Export passwords for Firefox Quantum
 ========================================================
 
@@ -151,3 +153,6 @@ Credits
 
 Thanks a lot to @lclevy for the retro-engineering! I was inspired by his
 repository https://github.com/lclevy/firepwd.
+
+.. |Downloads| image:: https://pepy.tech/badge/ffpass
+   :target: https://pepy.tech/project/ffpass
