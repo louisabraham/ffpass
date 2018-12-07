@@ -50,13 +50,20 @@ MAGIC1 = b"\xf8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01"
 MAGIC2 = (1, 2, 840, 113549, 3, 7)
 
 
+class NoDatabase(Exception):
+    pass
+
+
 class WrongPassword(Exception):
     pass
 
 
-def getKey(directory, masterPassword=""):
+def getKey(directory: Path, masterPassword=""):
+    dbfile: Path = directory / "key4.db"
+    if not dbfile.exists():
+        raise NoDatabase()
     # firefox 58.0.2 / NSS 3.35 with key4.db in SQLite
-    conn = sqlite3.connect((directory / "key4.db").as_posix())
+    conn = sqlite3.connect(dbfile.as_posix())
     c = conn.cursor()
     # first check password
     c.execute("SELECT item1,item2 FROM metadata WHERE id = 'password';")
@@ -242,7 +249,11 @@ def askpass(directory):
 
 
 def main_export(args):
-    key = askpass(args.directory)
+    try:
+        key = askpass(args.directory)
+    except NoDatabase:
+        # if the database is empty, we are done!
+        return
     jsonLogins = getJsonLogins(args.directory)
     logins = exportLogins(key, jsonLogins)
     writer = csv.writer(args.to_file)
@@ -255,6 +266,8 @@ def main_import(args):
         try:
             key = getKey(args.directory)
         except WrongPassword:
+            # it is not possible to read the password
+            # if stdin is used for input
             print(
                 "Password is not empty. You have to specify FROM_FILE.", file=sys.stderr
             )
@@ -318,7 +331,13 @@ def main():
         else:
             args.directory = guessed_dir
     args.directory = args.directory.expanduser()
-    args.func(args)
+    try:
+        args.func(args)
+    except NoDatabase:
+        print(
+            "Firefox password database is empty. Please create it from Firefox.",
+            file=sys.stderr,
+        )
 
 
 if __name__ == "__main__":

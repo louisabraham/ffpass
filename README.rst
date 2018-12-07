@@ -148,6 +148,12 @@ Troubleshoot
    `instructions <https://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data#w_how-do-i-find-my-profile>`__
    on the website of Firefox.
 
+-  ``Firefox password database is empty. Please create it from Firefox.``
+
+   It means that Firefox currently doens’t store any password.
+   ``ffpass`` cannot create the password database for security reasons.
+   Just add one password manually to Firefox to create the database.
+
 Credits
 -------
 
