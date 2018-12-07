@@ -10,7 +10,7 @@ flake8:
 	flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
 clean:
-	rm -rf ffpass.egg-info build dist
+	rm -rf *.egg-info build dist
 
 doc:
 	pandoc README.md -o README.rst
