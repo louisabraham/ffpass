@@ -199,7 +199,6 @@ def addNewLogins(key, jsonLogins, logins):
 def guessDir():
     dirs = {
         "darwin": "~/Library/Application Support/Firefox",
-        "linux2": "~/.mozilla/firefox",
         "linux": "~/.mozilla/firefox",
     }
     if sys.platform in dirs:
