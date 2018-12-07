@@ -41,7 +41,7 @@ from pyasn1.type.univ import Sequence, OctetString, ObjectIdentifier
 from Crypto.Cipher import DES3
 
 
-MAGIC1 = b'\xf8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01'
+MAGIC1 = b"\xf8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01"
 MAGIC2 = (1, 2, 840, 113549, 3, 7)
 
 
@@ -49,9 +49,9 @@ class WrongPassword(Exception):
     pass
 
 
-def getKey(directory, masterPassword=''):
+def getKey(directory, masterPassword=""):
     # firefox 58.0.2 / NSS 3.35 with key4.db in SQLite
-    conn = sqlite3.connect((directory/'key4.db').as_posix())
+    conn = sqlite3.connect((directory / "key4.db").as_posix())
     c = conn.cursor()
     # first check password
     c.execute("SELECT item1,item2 FROM metadata WHERE id = 'password';")
@@ -61,12 +61,13 @@ def getKey(directory, masterPassword=''):
     decodedItem2, _ = der_decode(item2)
     entrySalt = decodedItem2[0][1][0].asOctets()
     cipherT = decodedItem2[1].asOctets()
-    clearText = decrypt3DES(globalSalt, masterPassword,
-                            entrySalt, cipherT)  # usual Mozilla PBE
-    if clearText != b'password-check\x02\x02':
+    clearText = decrypt3DES(
+        globalSalt, masterPassword, entrySalt, cipherT
+    )  # usual Mozilla PBE
+    if clearText != b"password-check\x02\x02":
         raise WrongPassword()
     if args.verbose:
-        print('password checked', file=sys.stderr)
+        print("password checked", file=sys.stderr)
     # decrypt 3des key to decrypt "logins.json" content
     c.execute("SELECT a11,a102 FROM nssPrivate;")
     row = next(c)
@@ -77,31 +78,31 @@ def getKey(directory, masterPassword=''):
     cipherT = decodedA11[1].asOctets()
     key = decrypt3DES(globalSalt, masterPassword, entrySalt, cipherT)
     if args.verbose:
-        print('3deskey', key.hex(), file=sys.stderr)
+        print("3deskey", key.hex(), file=sys.stderr)
     return key[:24]
 
 
 def PKCS7pad(b):
     l = (-len(b) - 1) % 8 + 1
-    return b + bytes([l]*l)
+    return b + bytes([l] * l)
 
 
 def PKCS7unpad(b):
-    return b[:-b[-1]]
+    return b[: -b[-1]]
 
 
 def decrypt3DES(globalSalt, masterPassword, entrySalt, encryptedData):
-    hp = sha1(globalSalt+masterPassword.encode()).digest()
-    pes = entrySalt + b'\x00'*(20-len(entrySalt))
-    chp = sha1(hp+entrySalt).digest()
-    k1 = hmac.new(chp, pes+entrySalt, sha1).digest()
+    hp = sha1(globalSalt + masterPassword.encode()).digest()
+    pes = entrySalt + b"\x00" * (20 - len(entrySalt))
+    chp = sha1(hp + entrySalt).digest()
+    k1 = hmac.new(chp, pes + entrySalt, sha1).digest()
     tk = hmac.new(chp, pes, sha1).digest()
-    k2 = hmac.new(chp, tk+entrySalt, sha1).digest()
-    k = k1+k2
+    k2 = hmac.new(chp, tk + entrySalt, sha1).digest()
+    k = k1 + k2
     iv = k[-8:]
     key = k[:24]
     if args.verbose:
-        print('key='+key.hex(), 'iv='+iv.hex(), file=sys.stderr)
+        print("key=" + key.hex(), "iv=" + iv.hex(), file=sys.stderr)
     return DES3.new(key, DES3.MODE_CBC, iv).decrypt(encryptedData)
 
 
@@ -130,27 +131,31 @@ def encodeLoginData(key, data):
 
 
 def getJsonLogins(directory):
-    with open(directory / 'logins.json', 'r') as loginf:
+    with open(directory / "logins.json", "r") as loginf:
         jsonLogins = json.load(loginf)
     return jsonLogins
 
 
 def dumpJsonLogins(directory, jsonLogins):
-    with open(directory / 'logins.json', 'w') as loginf:
-        json.dump(jsonLogins, loginf, separators=',:')
+    with open(directory / "logins.json", "w") as loginf:
+        json.dump(jsonLogins, loginf, separators=",:")
 
 
 def exportLogins(key, jsonLogins):
-    if 'logins' not in jsonLogins:
+    if "logins" not in jsonLogins:
         print("error: no 'logins' key in logins.json", file=sys.stderr)
         return []
     logins = []
-    for row in jsonLogins['logins']:
-        encUsername = row['encryptedUsername']
-        encPassword = row['encryptedPassword']
-        logins.append((row['hostname'],
-                       decodeLoginData(key, encUsername),
-                       decodeLoginData(key, encPassword)))
+    for row in jsonLogins["logins"]:
+        encUsername = row["encryptedUsername"]
+        encPassword = row["encryptedPassword"]
+        logins.append(
+            (
+                row["hostname"],
+                decodeLoginData(key, encUsername),
+                decodeLoginData(key, encPassword),
+            )
+        )
     return logins
 
 
@@ -158,71 +163,72 @@ def readCSV(from_file):
     logins = []
     reader = csv.DictReader(from_file)
     for row in reader:
-        logins.append((rawURL(row['url']),
-                       row['username'],
-                       row['password']))
+        logins.append((rawURL(row["url"]), row["username"], row["password"]))
     return logins
 
 
 def rawURL(url):
     p = urlparse(url)
-    return type(p)(*p[:2], *['']*4).geturl()
+    return type(p)(*p[:2], *[""] * 4).geturl()
 
 
 def addNewLogins(key, jsonLogins, logins):
-    nextId = jsonLogins['nextId']
-    timestamp = int(datetime.now().timestamp()*1000)
+    nextId = jsonLogins["nextId"]
+    timestamp = int(datetime.now().timestamp() * 1000)
     for i, (url, username, password) in enumerate(logins, nextId):
         entry = {
-            'id': i,
-            'hostname': url,
-            'httpRealm': None,
-            'formSubmitURL': '',
-            'usernameField': '',
-            'passwordField': '',
-            'encryptedUsername': encodeLoginData(key, username),
-            'encryptedPassword': encodeLoginData(key, password),
-            'guid': '{%s}' % uuid4(),
-            'encType': 1,
-            'timeCreated': timestamp,
-            'timeLastUsed': timestamp,
-            'timePasswordChanged': timestamp,
-            'timesUsed': 0
+            "id": i,
+            "hostname": url,
+            "httpRealm": None,
+            "formSubmitURL": "",
+            "usernameField": "",
+            "passwordField": "",
+            "encryptedUsername": encodeLoginData(key, username),
+            "encryptedPassword": encodeLoginData(key, password),
+            "guid": "{%s}" % uuid4(),
+            "encType": 1,
+            "timeCreated": timestamp,
+            "timeLastUsed": timestamp,
+            "timePasswordChanged": timestamp,
+            "timesUsed": 0,
         }
-        jsonLogins['logins'].append(entry)
-    jsonLogins['nextId'] = i + 1
+        jsonLogins["logins"].append(entry)
+    jsonLogins["nextId"] = i + 1
 
 
 def guessDir():
     dirs = {
-        'darwin': '~/Library/Application Support/Firefox',
-        'linux2': '~/.mozilla/firefox'
+        "darwin": "~/Library/Application Support/Firefox",
+        "linux2": "~/.mozilla/firefox",
     }
     if sys.platform in dirs:
         path = Path(dirs[sys.platform]).expanduser()
         config = configparser.ConfigParser()
-        config.read(path / 'profiles.ini')
+        config.read(path / "profiles.ini")
         if len(config.sections()) == 2:
             profile = config[config.sections()[1]]
-            ans = path / profile['Path']
+            ans = path / profile["Path"]
             if args.verbose:
-                print('Using profile:', ans, file=sys.stderr)
+                print("Using profile:", ans, file=sys.stderr)
             return ans
         else:
             if args.verbose:
-                print('There is more than one profile', file=sys.stderr)
+                print("There is more than one profile", file=sys.stderr)
     elif args.verbose:
-        print('Automatic profile selection not supported for platform',
-              sys.platform, file=sys.stderr)
+        print(
+            "Automatic profile selection not supported for platform",
+            sys.platform,
+            file=sys.stderr,
+        )
 
 
 def askpass(directory):
-    password = ''
+    password = ""
     while True:
         try:
             key = getKey(directory, password)
         except WrongPassword:
-            password = getpass('Master Password:')
+            password = getpass("Master Password:")
         else:
             break
     return key
@@ -233,7 +239,7 @@ def main_export(args):
     jsonLogins = getJsonLogins(args.directory)
     logins = exportLogins(key, jsonLogins)
     writer = csv.writer(args.to_file)
-    writer.writerow(['url', 'username', 'password'])
+    writer.writerow(["url", "username", "password"])
     writer.writerows(logins)
 
 
@@ -242,8 +248,9 @@ def main_import(args):
         try:
             key = getKey(args.directory)
         except WrongPassword:
-            print('Password is not empty. You have to specify FROM_FILE.',
-                  file=sys.stderr)
+            print(
+                "Password is not empty. You have to specify FROM_FILE.", file=sys.stderr
+            )
             sys.exit(1)
     else:
         key = askpass(args.directory)
@@ -254,25 +261,40 @@ def main_import(args):
 
 
 def makeParser(required_dir):
-    parser = argparse.ArgumentParser(prog='ffpass', description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
-    subparsers = parser.add_subparsers(dest='mode')
+    parser = argparse.ArgumentParser(
+        prog="ffpass",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    subparsers = parser.add_subparsers(dest="mode")
     subparsers.required = True
 
     parser_export = subparsers.add_parser(
-        'export', description='outputs a CSV with header `url,username,password`')
+        "export", description="outputs a CSV with header `url,username,password`"
+    )
     parser_import = subparsers.add_parser(
-        'import', description='imports a CSV with columns `url,username,password` (order insensitive)')
+        "import",
+        description="imports a CSV with columns `url,username,password` (order insensitive)",
+    )
 
-    parser_import.add_argument('-f', '--from', dest='from_file',
-                               type=argparse.FileType('r'), default=sys.stdin)
-    parser_export.add_argument('-t', '--to', dest='to_file',
-                               type=argparse.FileType('w'), default=sys.stdout)
+    parser_import.add_argument(
+        "-f", "--from", dest="from_file", type=argparse.FileType("r"), default=sys.stdin
+    )
+    parser_export.add_argument(
+        "-t", "--to", dest="to_file", type=argparse.FileType("w"), default=sys.stdout
+    )
 
     for sub in subparsers.choices.values():
-        sub.add_argument('-d', '--directory', '--dir', type=Path, required=required_dir,
-                         default=None, help='Firefox profile directory')
-        sub.add_argument('-v', '--verbose', action='store_true')
+        sub.add_argument(
+            "-d",
+            "--directory",
+            "--dir",
+            type=Path,
+            required=required_dir,
+            default=None,
+            help="Firefox profile directory",
+        )
+        sub.add_argument("-v", "--verbose", action="store_true")
 
     parser_import.set_defaults(func=main_import)
     parser_export.set_defaults(func=main_export)
@@ -292,5 +314,5 @@ def main():
     args.func(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
