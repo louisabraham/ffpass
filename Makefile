@@ -12,5 +12,5 @@ flake8:
 clean:
 	rm -rf *.egg-info build dist
 
-doc:
+doc: README.md
 	pandoc README.md -o README.rst
