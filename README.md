@@ -139,6 +139,10 @@ ffpass export --to passwords.csv
     cannot create the password database for security reasons. Just add
     one password manually to Firefox to create the database.
 
+  - Empty url field in Firefox after importing: the urls of the source
+    csv file must begin with a scheme (`http://`, `https://`, `ftp://`,
+    etc…)
+
 ## Credits
 
 Thanks a lot to @lclevy for the retro-engineering\! I was inspired by
