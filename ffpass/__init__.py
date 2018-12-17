@@ -82,7 +82,9 @@ def getKey(directory: Path, masterPassword=""):
         print("password checked", file=sys.stderr)
     # decrypt 3des key to decrypt "logins.json" content
     c.execute("SELECT a11,a102 FROM nssPrivate;")
-    row = next(c)
+    for row in c:
+        if row[1] == MAGIC1:
+            break
     a11 = row[0]  # CKA_VALUE
     assert row[1] == MAGIC1  # CKA_ID
     decodedA11, _ = der_decode(a11)
