@@ -94,6 +94,9 @@ By default, it works with the passwords exported from Google Chrome.
 ffpass import --from passwords.csv
 ```
 
+Restart Firefox, making sure it didn't leave any process still open.
+
+
 ## Transfer from Firefox to Google Chrome
 
 ### Export from Firefox
