@@ -23,6 +23,9 @@ pip install ffpass
   - Export to CSV
   - Import from CSV compatible with Google Chrome
 
+
+> Note: Firefox must be closed during the whole process, as these actions change its database.
+
 ## Export to CSV
 
 ``` bash
@@ -90,14 +93,21 @@ By default, it works with the passwords exported from Google Chrome.
 
 ### Import in Firefox
 
+1. Stop Firefox
+2. Import into Firefox:
 ``` bash
 ffpass import --from passwords.csv
 ```
+
+Restart Firefox, making sure it didn't leave any process still open.
+
 
 ## Transfer from Firefox to Google Chrome
 
 ### Export from Firefox
 
+1. Stop Firefox
+2. Export from Firefox:
 ``` bash
 ffpass export --to passwords.csv
 ```
