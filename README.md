@@ -148,6 +148,10 @@ ffpass export --to passwords.csv
     It means that Firefox currently doens't store any password. `ffpass`
     cannot create the password database for security reasons. Just add
     one password manually to Firefox to create the database.
+    
+  - `TypeError: 'PosixPath' object is not iterable`
+  
+    See [#17](https://github.com/louisabraham/ffpass/issues/17).
 
   - Empty url field in Firefox after importing: the urls of the source
     csv file must begin with a scheme (`http://`, `https://`, `ftp://`,
