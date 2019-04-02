@@ -23,6 +23,9 @@ pip install ffpass
   - Export to CSV
   - Import from CSV compatible with Google Chrome
 
+
+> Note: Firefox must be closed during the whole process, as these actions change its database.
+
 ## Export to CSV
 
 ``` bash
@@ -90,14 +93,21 @@ By default, it works with the passwords exported from Google Chrome.
 
 ### Import in Firefox
 
+1. Stop Firefox
+2. Import into Firefox:
 ``` bash
 ffpass import --from passwords.csv
 ```
+
+Restart Firefox, making sure it didn't leave any process still open.
+
 
 ## Transfer from Firefox to Google Chrome
 
 ### Export from Firefox
 
+1. Stop Firefox
+2. Export from Firefox:
 ``` bash
 ffpass export --to passwords.csv
 ```
@@ -138,6 +148,10 @@ ffpass export --to passwords.csv
     It means that Firefox currently doens't store any password. `ffpass`
     cannot create the password database for security reasons. Just add
     one password manually to Firefox to create the database.
+    
+  - `TypeError: 'PosixPath' object is not iterable`
+  
+    See [#17](https://github.com/louisabraham/ffpass/issues/17).
 
   - Empty url field in Firefox after importing: the urls of the source
     csv file must begin with a scheme (`http://`, `https://`, `ftp://`,
