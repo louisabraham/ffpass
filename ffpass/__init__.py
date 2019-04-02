@@ -86,7 +86,9 @@ def getKey(directory: Path, masterPassword=""):
         if row[1] == MAGIC1:
             break
     a11 = row[0]  # CKA_VALUE
-    assert row[1] == MAGIC1  # CKA_ID
+    assert (
+        row[1] == MAGIC1
+    ), "The Firefox database appears to be broken. Try to add a password to rebuild it."  # CKA_ID
     decodedA11, _ = der_decode(a11)
     entrySalt = decodedA11[0][1][0].asOctets()
     cipherT = decodedA11[1].asOctets()
