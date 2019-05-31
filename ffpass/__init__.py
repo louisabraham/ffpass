@@ -223,8 +223,9 @@ def guessDir():
         path = Path(dirs[sys.platform]).expanduser()
         config = configparser.ConfigParser()
         config.read(path / "profiles.ini")
-        if len(config.sections()) == 2:
-            profile = config[config.sections()[1]]
+        profiles = [s for s in config.sections() if "Path" in config[s]]
+        if len(profiles) == 1:
+            profile = config[profiles[0]]
             ans = path / profile["Path"]
             if args.verbose:
                 print("Using profile:", ans, file=sys.stderr)
