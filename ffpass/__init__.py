@@ -215,7 +215,7 @@ def addNewLogins(key, jsonLogins, logins):
             "timesUsed": 0,
         }
         jsonLogins["logins"].append(entry)
-    jsonLogins["nextId"] = i + 1
+    jsonLogins["nextId"] += len(logins)
 
 
 def guessDir():
