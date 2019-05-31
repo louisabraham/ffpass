@@ -1,7 +1,7 @@
 pypi: dist
 	twine upload dist/*
 	
-dist: doc flake8
+dist: flake8
 	-rm dist/*
 	./setup.py sdist bdist_wheel
 
@@ -11,6 +11,3 @@ flake8:
 
 clean:
 	rm -rf *.egg-info build dist
-
-doc: README.md
-	pandoc README.md -o README.rst
