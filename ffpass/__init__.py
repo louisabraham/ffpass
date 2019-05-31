@@ -175,9 +175,15 @@ def exportLogins(key, jsonLogins):
     return logins
 
 
+def lower_header(from_file):
+    it = iter(from_file)
+    yield next(it).lower()
+    yield from it
+
+
 def readCSV(from_file):
     logins = []
-    reader = csv.DictReader(from_file)
+    reader = csv.DictReader(lower_header(from_file))
     for row in reader:
         logins.append((rawURL(row["url"]), row["username"], row["password"]))
     return logins
