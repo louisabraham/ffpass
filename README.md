@@ -1,5 +1,5 @@
 [![PyPI
-version](https://badge.fury.io/py/pypi.svg)](https://badge.fury.io/py/pypi)
+version](https://badge.fury.io/py/ffpass.svg)](https://badge.fury.io/py/ffpass)
 [![Downloads](https://pepy.tech/badge/ffpass)](https://pepy.tech/project/ffpass)
 
 # ffpass - Import and Export passwords for Firefox Quantum
