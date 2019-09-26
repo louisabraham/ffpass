@@ -27,8 +27,9 @@ pip install ffpass
 
 > Note: Firefox must be closed during the whole process, as these
 > actions change its database. 
-> Note: Passwords must be uploaded before signing in to firefox, 
-> in order to be synced to other devices.  
+>
+> Note: If you have Sync enabled, you'll have to disconnect and
+> reconnect your Firefox account after importing the passwords.
 
 ## Export to CSV
 
@@ -168,9 +169,8 @@ ffpass export --to passwords.csv
     
   - Passwords do not sync to other devices, including Lockwise app.
 
-    You uploaded them after signing in. Reinstall firefox, manualy save 
-    one password, upload from the file using ffpass and then sign in.
-    After that, the passwords should sync.
+    Importing passwords break the sync. You'll have to disconnect the
+    Firefox account in the Sync options and the re-add it.
 
 ## Credits
 
