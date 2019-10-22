@@ -26,7 +26,10 @@ pip install ffpass
   - Import from CSV compatible with Google Chrome
 
 > Note: Firefox must be closed during the whole process, as these
-> actions change its database.
+> actions change its database. 
+>
+> Note: If you have Sync enabled, you'll have to disconnect and
+> reconnect your Firefox account after importing the passwords.
 
 ## Export to CSV
 
@@ -163,6 +166,11 @@ ffpass export --to passwords.csv
   - Empty url field in Firefox after importing: the urls of the source
     csv file must begin with a scheme (`http://`, `https://`, `ftp://`,
     etc…)
+    
+  - Passwords do not sync to other devices, including Lockwise app.
+
+    Importing passwords break the sync. You'll have to disconnect the
+    Firefox account in the Sync options and the re-add it.
 
 ## Credits
 
