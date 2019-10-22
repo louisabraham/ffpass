@@ -309,10 +309,18 @@ def makeParser(required_dir):
     )
 
     parser_import.add_argument(
-        "-f", "--from", dest="from_file", type=argparse.FileType("r"), default=sys.stdin
+        "-f",
+        "--from",
+        dest="from_file",
+        type=argparse.FileType("r", encoding="utf-8"),
+        default=sys.stdin,
     )
     parser_export.add_argument(
-        "-t", "--to", dest="to_file", type=argparse.FileType("w"), default=sys.stdout
+        "-t",
+        "--to",
+        dest="to_file",
+        type=argparse.FileType("w", encoding="utf-8"),
+        default=sys.stdout,
     )
 
     for sub in subparsers.choices.values():
