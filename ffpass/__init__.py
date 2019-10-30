@@ -178,7 +178,10 @@ def exportLogins(key, jsonLogins):
 def lower_header(from_file):
     it = iter(from_file)
     yield next(it).lower()
-    yield from it
+    try:
+        yield from it
+    except StopIteration:
+        return
 
 
 def readCSV(from_file):
