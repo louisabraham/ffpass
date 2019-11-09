@@ -15,7 +15,7 @@ provide these features.
 ffpass requires Python 3.6+ and will work with Firefox 58+
 
 ``` bash
-pip install ffpass
+pip3 install ffpass
 ```
 
 ## Features
