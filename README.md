@@ -4,8 +4,8 @@ version](https://badge.fury.io/py/ffpass.svg)](https://badge.fury.io/py/ffpass)
 
 # ffpass - Import and Export passwords for Firefox Quantum
 
-The latest version of Firefox doesn’t allow to import or export the
-stored logins and passwords.
+The latest version of Firefox doesn't allow to import or export the
+stored logins and passwords as a file.
 
 This tools interacts with the encrypted password database of Firefox to
 provide these features.
@@ -77,7 +77,7 @@ By default, it works with the passwords exported from Google Chrome.
 
 ## Transfer from Google Chrome to Firefox
 
-Firefox can more accurately import logins saved in Chrome/Chromium on Windows and macOS (including timestamps, deduping, http auth. logins, etc.) so you don't need to use this tool on those operating systems. See File > Import from Another Browser… in Firefox to import.
+Now, Firefox can more accurately import logins saved in Chrome/Chromium on Windows and macOS (including timestamps, deduping, http auth. logins, etc.) so you don't need to use this tool on those operating systems. See File > Import from Another Browser… in Firefox to import.
 
 ### Export from Google Chrome
 
