@@ -72,8 +72,16 @@ By default, it works with the passwords exported from Google Chrome.
       -h, --help            show this help message and exit
       -f FROM_FILE, --from FROM_FILE
       -d DIRECTORY, --directory DIRECTORY, --dir DIRECTORY
-                            Firefox profile directory
+                            [Firefox profile directory](https://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data#w_how-do-i-find-my-profile)
       -v, --verbose
+
+### Formatting
+
+For CSV files not exported from Google Chrome, take these formatting rules into consideration:
+
+    1. The CSV must have the headers "url", "username", and "password". Any other columns will be safely ignored.
+    2. The url must be formatted to include all prefixes ("http://", "https://", etc), or ffpass will not be able to read them correctly.
+    3. ffpass does not care if the CSV has quotes around fields, even if some fields have them and others don't.
 
 ## Transfer from Google Chrome to Firefox
 
@@ -165,7 +173,7 @@ ffpass export --to passwords.csv
     
     See [\#17](https://github.com/louisabraham/ffpass/issues/17).
 
-  - Empty url field in Firefox after importing: the urls of the source
+  - Empty url field ("example.com") in Firefox after importing: the urls of the source
     csv file must begin with a scheme (`http://`, `https://`, `ftp://`,
     etc…)
     
