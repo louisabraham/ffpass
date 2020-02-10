@@ -47,7 +47,12 @@ from Crypto.Cipher import DES3
 
 
 MAGIC1 = b"\xf8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01"
-MAGIC2 = (1, 2, 840, 113549, 3, 7)
+
+# des-ede3-cbc
+MAGIC2 = (1, 2, 840, 113_549, 3, 7)
+
+# pkcs-12-PBEWithSha1AndTripleDESCBC
+MAGIC3 = (1, 2, 840, 113_549, 1, 12, 5, 1, 3)
 
 
 class NoDatabase(Exception):
@@ -84,12 +89,15 @@ def getKey(directory: Path, masterPassword=""):
     c.execute("SELECT a11,a102 FROM nssPrivate;")
     for row in c:
         if row[1] == MAGIC1:
+            a11 = row[0]  # CKA_VALUE
             break
-    a11 = row[0]  # CKA_VALUE
-    assert (
-        row[1] == MAGIC1
-    ), "The Firefox database appears to be broken. Try to add a password to rebuild it."  # CKA_ID
+    else:
+        raise Exception(
+            "The Firefox database appears to be broken. Try to add a password to rebuild it."
+        )  # CKA_ID
     decodedA11, _ = der_decode(a11)
+    oid = decodedA11[0][0].asTuple()
+    assert oid == MAGIC3, f"The key is encoded with an unknown format {oid}"
     entrySalt = decodedA11[0][1][0].asOctets()
     cipherT = decodedA11[1].asOctets()
     key = decrypt3DES(globalSalt, masterPassword, entrySalt, cipherT)
