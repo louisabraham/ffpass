@@ -130,7 +130,13 @@ def decodeLoginData(key, data):
     iv = asn1data[1][1].asOctets()
     ciphertext = asn1data[2].asOctets()
     des = DES3.new(key, DES3.MODE_CBC, iv)
-    return PKCS7unpad(des.decrypt(ciphertext)).decode()
+
+    b = PKCS7unpad(des.decrypt(ciphertext))
+    try:
+        return b.decode()
+    except UnicodeDecodeError as e:
+        print("error when decoding", b, file=sys.stderr)
+        raise
 
 
 def encodeLoginData(key, data):
