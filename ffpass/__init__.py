@@ -35,7 +35,6 @@ import secrets
 from getpass import getpass
 from uuid import uuid4
 from datetime import datetime
-import configparser
 from urllib.parse import urlparse
 import sqlite3
 import os.path
@@ -63,6 +62,16 @@ class WrongPassword(Exception):
     pass
 
 
+def _err(message):
+    print(f'error: {message}', file=sys.stderr)
+
+
+def _msg(message):
+    if not args.verbose:
+        return
+    print(message, file=sys.stderr)
+
+
 def getKey(directory: Path, masterPassword=""):
     dbfile: Path = directory / "key4.db"
     if not dbfile.exists():
@@ -83,8 +92,9 @@ def getKey(directory: Path, masterPassword=""):
     )  # usual Mozilla PBE
     if clearText != b"password-check\x02\x02":
         raise WrongPassword()
-    if args.verbose:
-        print("password checked", file=sys.stderr)
+
+    _msg("password checked")
+
     # decrypt 3des key to decrypt "logins.json" content
     c.execute("SELECT a11,a102 FROM nssPrivate;")
     for row in c:
@@ -101,8 +111,7 @@ def getKey(directory: Path, masterPassword=""):
     entrySalt = decodedA11[0][1][0].asOctets()
     cipherT = decodedA11[1].asOctets()
     key = decrypt3DES(globalSalt, masterPassword, entrySalt, cipherT)
-    if args.verbose:
-        print("3deskey", key.hex(), file=sys.stderr)
+    _msg("3deskey: " + key.hex())
     return key[:24]
 
 
@@ -125,8 +134,7 @@ def decrypt3DES(globalSalt, masterPassword, entrySalt, encryptedData):
     k = k1 + k2
     iv = k[-8:]
     key = k[:24]
-    if args.verbose:
-        print("key=" + key.hex(), "iv=" + iv.hex(), file=sys.stderr)
+    _msg("key={} iv={}".format(key.hex(), iv.hex()))
     return DES3.new(key, DES3.MODE_CBC, iv).decrypt(encryptedData)
 
 
@@ -167,7 +175,7 @@ def dumpJsonLogins(directory, jsonLogins):
 
 def exportLogins(key, jsonLogins):
     if "logins" not in jsonLogins:
-        print("error: no 'logins' key in logins.json", file=sys.stderr)
+        _err("no 'logins' key in logins.json")
         return []
     logins = []
     for row in jsonLogins["logins"]:
@@ -233,26 +241,26 @@ def guessDir():
         "win32": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox"),
         "cygwin": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox"),
     }
-    if sys.platform in dirs:
-        path = Path(dirs[sys.platform]).expanduser()
-        config = configparser.ConfigParser()
-        config.read(path / "profiles.ini")
-        profiles = [s for s in config.sections() if "Path" in config[s]]
-        if len(profiles) == 1:
-            profile = config[profiles[0]]
-            ans = path / profile["Path"]
-            if args.verbose:
-                print("Using profile:", ans, file=sys.stderr)
-            return ans
-        else:
-            if args.verbose:
-                print("There is more than one profile", file=sys.stderr)
-    elif args.verbose:
-        print(
-            "Automatic profile selection not supported for platform",
-            sys.platform,
-            file=sys.stderr,
-        )
+
+    if sys.platform not in dirs:
+        _msg(f"Automatic profile selection not supported for {sys.platform}")
+        return
+
+    paths = Path(dirs[sys.platform]).expanduser()
+    profiles = [path.parent for path in paths.glob(os.path.join("*", "logins.json"))]
+
+    if len(profiles) == 0:
+        _err("Cannot find any Firefox profile")
+        return
+
+    if len(profiles) > 1:
+        _msg("There is more than one profile")
+        return
+
+    profile_path = profiles[0]
+
+    _msg(f"Using profile: {profile_path}")
+    return profiles[0]
 
 
 def askpass(directory):
@@ -287,9 +295,7 @@ def main_import(args):
         except WrongPassword:
             # it is not possible to read the password
             # if stdin is used for input
-            print(
-                "Password is not empty. You have to specify FROM_FILE.", file=sys.stderr
-            )
+            _err("Password is not empty. You have to specify FROM_FILE.")
             sys.exit(1)
     else:
         key = askpass(args.directory)
@@ -361,10 +367,7 @@ def main():
     try:
         args.func(args)
     except NoDatabase:
-        print(
-            "Firefox password database is empty. Please create it from Firefox.",
-            file=sys.stderr,
-        )
+        _err("Firefox password database is empty. Please create it from Firefox.")
 
 
 if __name__ == "__main__":
