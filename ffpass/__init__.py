@@ -236,31 +236,32 @@ def addNewLogins(key, jsonLogins, logins):
 
 def guessDir():
     dirs = {
-        "darwin": "~/Library/Application Support/Firefox",
+        "darwin": "~/Library/Application Support/Firefox/Profiles",
         "linux": "~/.mozilla/firefox",
-        "win32": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox"),
-        "cygwin": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox"),
+        "win32": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox\Profiles"),
+        "cygwin": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox\Profiles"),
     }
 
     if sys.platform not in dirs:
-        _msg(f"Automatic profile selection not supported for {sys.platform}")
+        _msg(f"Automatic profile selection is not supported for {sys.platform}")
         return
 
     paths = Path(dirs[sys.platform]).expanduser()
     profiles = [path.parent for path in paths.glob(os.path.join("*", "logins.json"))]
 
     if len(profiles) == 0:
-        _err("Cannot find any Firefox profile")
+        _err("Cannot find any Firefox profiles")
         return
 
     if len(profiles) > 1:
-        _msg("There is more than one profile")
+        _msg("More than one profile detected. Please specify a profile to parse (-d path/to/profile)")
+        _msg("valid profiles:\n" + '\n'.join(profiles))
         return
 
     profile_path = profiles[0]
 
     _msg(f"Using profile: {profile_path}")
-    return profiles[0]
+    return profile_path
 
 
 def askpass(directory):
