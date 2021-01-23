@@ -38,6 +38,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 import sqlite3
 import os.path
+import logging
 
 from pyasn1.codec.der.decoder import decode as der_decode
 from pyasn1.codec.der.encoder import encode as der_encode
@@ -60,16 +61,6 @@ class NoDatabase(Exception):
 
 class WrongPassword(Exception):
     pass
-
-
-def _err(message):
-    print(f'error: {message}', file=sys.stderr)
-
-
-def _msg(message):
-    if not args.verbose:
-        return
-    print(message, file=sys.stderr)
 
 
 def getKey(directory: Path, masterPassword=""):
@@ -104,7 +95,7 @@ def getKey(directory: Path, masterPassword=""):
     if clearText != b"password-check\x02\x02":
         raise WrongPassword()
 
-    _msg("password checked")
+    logging.info("password checked")
 
     # decrypt 3des key to decrypt "logins.json" content
     c.execute("""
@@ -131,7 +122,7 @@ def getKey(directory: Path, masterPassword=""):
         cipherT = decodedA11[1].asOctets()
         key = decrypt3DES(globalSalt, masterPassword, entrySalt, cipherT)
 
-    _msg("{}: {}".format(encryption_method, key.hex()))
+    logging.info("{}: {}".format(encryption_method, key.hex()))
     return key[:24]
 
 
@@ -171,7 +162,7 @@ def decrypt3DES(globalSalt, masterPassword, entrySalt, encryptedData):
     k = k1 + k2
     iv = k[-8:]
     key = k[:24]
-    _msg("key={} iv={}".format(key.hex(), iv.hex()))
+    logging.info("key={} iv={}".format(key.hex(), iv.hex()))
     return DES3.new(key, DES3.MODE_CBC, iv).decrypt(encryptedData)
 
 
@@ -212,7 +203,7 @@ def dumpJsonLogins(directory, jsonLogins):
 
 def exportLogins(key, jsonLogins):
     if "logins" not in jsonLogins:
-        _err("no 'logins' key in logins.json")
+        logging.error("no 'logins' key in logins.json")
         return []
     logins = []
     for row in jsonLogins["logins"]:
@@ -280,24 +271,24 @@ def guessDir():
     }
 
     if sys.platform not in dirs:
-        _msg(f"Automatic profile selection is not supported for {sys.platform}")
+        logging.info(f"Automatic profile selection is not supported for {sys.platform}")
         return
 
     paths = Path(dirs[sys.platform]).expanduser()
     profiles = [path.parent for path in paths.glob(os.path.join("*", "logins.json"))]
 
     if len(profiles) == 0:
-        _err("Cannot find any Firefox profiles")
+        logging.error("Cannot find any Firefox profiles")
         return
 
     if len(profiles) > 1:
-        _msg("More than one profile detected. Please specify a profile to parse (-d path/to/profile)")
-        _msg("valid profiles:\n\t" + '\n\t'.join(map(str, profiles)))
+        logging.info("More than one profile detected. Please specify a profile to parse (-d path/to/profile)")
+        logging.info("valid profiles:\n\t" + '\n\t'.join(map(str, profiles)))
         return
 
     profile_path = profiles[0]
 
-    _msg(f"Using profile: {profile_path}")
+    logging.info(f"Using profile: {profile_path}")
     return profile_path
 
 
@@ -333,7 +324,7 @@ def main_import(args):
         except WrongPassword:
             # it is not possible to read the password
             # if stdin is used for input
-            _err("Password is not empty. You have to specify FROM_FILE.")
+            logging.error("Password is not empty. You have to specify FROM_FILE.")
             sys.exit(1)
     else:
         key = askpass(args.directory)
@@ -393,7 +384,6 @@ def makeParser(required_dir):
 
 
 def main():
-    global args
     args = makeParser(False).parse_args()
     if args.directory is None:
         guessed_dir = guessDir()
@@ -402,10 +392,18 @@ def main():
         else:
             args.directory = guessed_dir
     args.directory = args.directory.expanduser()
+
+    if args.verbose:
+        logging_level = logging.INFO
+    else:
+        logging_level = logging.ERROR
+
+    logging.basicConfig(level=logging_level, format="%(levelname)-8s: %(message)s")
+
     try:
         args.func(args)
     except NoDatabase:
-        _err("Firefox password database is empty. Please create it from Firefox.")
+        logging.error("Firefox password database is empty. Please create it from Firefox.")
 
 
 if __name__ == "__main__":

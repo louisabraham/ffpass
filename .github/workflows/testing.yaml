@@ -1,0 +1,58 @@
+name: ffpass
+
+on: [push, pull_request_target]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Test with pytest
+      run: |
+        pip install pytest
+        pip install pytest-cov
+        python -m pytest tests --junit-xml pytest.xml
+
+    - name: Lint with flake8
+      run: |
+        pip install flake8
+        flake8 --ignore=E741,E501 .
+
+    - name: Upload Unit Test Results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: Unit Test Results
+        path: pytest.xml
+
+  publish-test-results:
+    name: "Publish Unit Tests Results"
+    needs: test
+    runs-on: ubuntu-latest
+    if: success() || failure()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1.7
+        with:
+          check_name: Unit Test Results
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          files: "artifacts/Unit Test Results/pytest.xml"
