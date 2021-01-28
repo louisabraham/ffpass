@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 The MIT License (MIT)
 Copyright (c) 2018 Louis Abraham <louis.abraham@yahoo.fr>
@@ -11,10 +10,9 @@ ffpass can import and export passwords from Firefox Quantum.
 \x1B[0m\033[1m\033[F\033[F
 
 example of usage:
+    ffpass export --file passwords.csv
 
-    ffpass export --to passwords.csv
-
-    ffpass import --from passwords.csv
+    ffpass import --file passwords.csv
 
 \033[0m\033[1;32m\033[F\033[F
 
@@ -60,6 +58,10 @@ class NoDatabase(Exception):
 
 
 class WrongPassword(Exception):
+    pass
+
+
+class NoProfile(Exception):
     pass
 
 
@@ -219,15 +221,15 @@ def exportLogins(key, jsonLogins):
     return logins
 
 
-def lower_header(from_file):
-    it = iter(from_file)
+def lower_header(csv_file):
+    it = iter(csv_file)
     yield next(it).lower()
     yield from it
 
 
-def readCSV(from_file):
+def readCSV(csv_file):
     logins = []
-    reader = csv.DictReader(lower_header(from_file))
+    reader = csv.DictReader(lower_header(csv_file))
     for row in reader:
         logins.append((rawURL(row["url"]), row["username"], row["password"]))
     return logins
@@ -271,20 +273,23 @@ def guessDir():
     }
 
     if sys.platform not in dirs:
-        logging.info(f"Automatic profile selection is not supported for {sys.platform}")
-        return
+        logging.error(f"Automatic profile selection is not supported for {sys.platform}")
+        logging.error("Please specify a profile to parse (-d path/to/profile)")
+        raise NoProfile
 
     paths = Path(dirs[sys.platform]).expanduser()
     profiles = [path.parent for path in paths.glob(os.path.join("*", "logins.json"))]
+    logging.debug(f"Paths: {paths}")
+    logging.debug(f"Profiles: {profiles}")
 
     if len(profiles) == 0:
         logging.error("Cannot find any Firefox profiles")
-        return
+        raise NoProfile
 
     if len(profiles) > 1:
-        logging.info("More than one profile detected. Please specify a profile to parse (-d path/to/profile)")
-        logging.info("valid profiles:\n\t" + '\n\t'.join(map(str, profiles)))
-        return
+        logging.error("More than one profile detected. Please specify a profile to parse (-d path/to/profile)")
+        logging.error("valid profiles:\n\t\t" + '\n\t\t'.join(map(str, profiles)))
+        raise NoProfile
 
     profile_path = profiles[0]
 
@@ -312,13 +317,13 @@ def main_export(args):
         return
     jsonLogins = getJsonLogins(args.directory)
     logins = exportLogins(key, jsonLogins)
-    writer = csv.writer(args.to_file)
+    writer = csv.writer(args.file)
     writer.writerow(["url", "username", "password"])
     writer.writerows(logins)
 
 
 def main_import(args):
-    if args.from_file == sys.stdin:
+    if args.file == sys.stdin:
         try:
             key = getKey(args.directory)
         except WrongPassword:
@@ -329,12 +334,12 @@ def main_import(args):
     else:
         key = askpass(args.directory)
     jsonLogins = getJsonLogins(args.directory)
-    logins = readCSV(args.from_file)
+    logins = readCSV(args.file)
     addNewLogins(key, jsonLogins, logins)
     dumpJsonLogins(args.directory, jsonLogins)
 
 
-def makeParser(required_dir):
+def makeParser():
     parser = argparse.ArgumentParser(
         prog="ffpass",
         description=__doc__,
@@ -353,15 +358,15 @@ def makeParser(required_dir):
 
     parser_import.add_argument(
         "-f",
-        "--from",
-        dest="from_file",
+        "--file",
+        dest="file",
         type=argparse.FileType("r", encoding="utf-8"),
         default=sys.stdin,
     )
     parser_export.add_argument(
-        "-t",
-        "--to",
-        dest="to_file",
+        "-f",
+        "--file",
+        dest="file",
         type=argparse.FileType("w", encoding="utf-8"),
         default=sys.stdout,
     )
@@ -372,11 +377,11 @@ def makeParser(required_dir):
             "--directory",
             "--dir",
             type=Path,
-            required=required_dir,
             default=None,
             help="Firefox profile directory",
         )
         sub.add_argument("-v", "--verbose", action="store_true")
+        sub.add_argument("--debug", action="store_true")
 
     parser_import.set_defaults(func=main_import)
     parser_export.set_defaults(func=main_export)
@@ -384,21 +389,28 @@ def makeParser(required_dir):
 
 
 def main():
-    args = makeParser(False).parse_args()
-    if args.directory is None:
-        guessed_dir = guessDir()
-        if guessed_dir is None:
-            args = makeParser(True).parse_args()
-        else:
-            args.directory = guessed_dir
-    args.directory = args.directory.expanduser()
+    logging.basicConfig(level=logging.ERROR, format="%(levelname)s: %(message)s")
+
+    parser = makeParser()
+    args = parser.parse_args()
 
     if args.verbose:
-        logging_level = logging.INFO
+        log_level = logging.INFO
+    elif args.debug:
+        log_level = logging.DEBUG
     else:
-        logging_level = logging.ERROR
+        log_level = logging.ERROR
 
-    logging.basicConfig(level=logging_level, format="%(levelname)-8s: %(message)s")
+    logging.getLogger().setLevel(log_level)
+
+    if args.directory is None:
+        try:
+            args.directory = guessDir()
+        except NoProfile:
+            print("")
+            parser.print_help()
+            parser.exit()
+    args.directory = args.directory.expanduser()
 
     try:
         args.func(args)
