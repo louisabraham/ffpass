@@ -232,6 +232,7 @@ def readCSV(csv_file):
     reader = csv.DictReader(lower_header(csv_file))
     for row in reader:
         logins.append((rawURL(row["url"]), row["username"], row["password"]))
+    logging.info(f'read {len(logins)} logins')
     return logins
 
 
@@ -243,7 +244,9 @@ def rawURL(url):
 def addNewLogins(key, jsonLogins, logins):
     nextId = jsonLogins["nextId"]
     timestamp = int(datetime.now().timestamp() * 1000)
+    logging.info('adding logins')
     for i, (url, username, password) in enumerate(logins, nextId):
+        logging.debug(f'adding {url} {username}')
         entry = {
             "id": i,
             "hostname": url,
