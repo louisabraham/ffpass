@@ -35,8 +35,8 @@ pip install ffpass
 
 ``` bash
 ffpass export > passwords.csv
-ffpass export -t passwords.csv
-ffpass export --to passwords.csv
+ffpass export -f passwords.csv
+ffpass export --file passwords.csv
 ```
 
 ### Usage
@@ -47,7 +47,7 @@ ffpass export --to passwords.csv
     
     optional arguments:
       -h, --help            show this help message and exit
-      -t TO_FILE, --to TO_FILE
+      -f FILE, --file FILE  file to export password (defaults to stdout)
       -d DIRECTORY, --directory DIRECTORY, --dir DIRECTORY
                             Firefox profile directory
       -v, --verbose
@@ -57,7 +57,7 @@ ffpass export --to passwords.csv
 ``` bash
 ffpass import < passwords.csv
 ffpass import -f passwords.csv
-ffpass import --from passwords.csv
+ffpass import --file passwords.csv
 ```
 
 By default, it works with the passwords exported from Google Chrome.
@@ -70,7 +70,7 @@ By default, it works with the passwords exported from Google Chrome.
     
     optional arguments:
       -h, --help            show this help message and exit
-      -f FROM_FILE, --from FROM_FILE
+      -f FILE, --file FILE  file to import from (defaults to stdin)
       -d DIRECTORY, --directory DIRECTORY, --dir DIRECTORY
                             [Firefox profile directory](https://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data#w_how-do-i-find-my-profile)
       -v, --verbose
@@ -114,7 +114,7 @@ Now, Firefox can more accurately import logins saved in Chrome/Chromium on Windo
 <!-- end list -->
 
 ``` bash
-ffpass import --from passwords.csv
+ffpass import --file passwords.csv
 ```
 
 Restart Firefox, making sure it didn't leave any process still open.
@@ -129,7 +129,7 @@ Restart Firefox, making sure it didn't leave any process still open.
 <!-- end list -->
 
 ``` bash
-ffpass export --to passwords.csv
+ffpass export --file passwords.csv
 ```
 
 ### Import in Google Chrome
