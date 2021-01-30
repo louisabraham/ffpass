@@ -13,7 +13,7 @@ ffpass can import and export passwords from Firefox Quantum.
 example of usage:
 
     ffpass export --to passwords.csv
-    
+
     ffpass import --from passwords.csv
 
 \033[0m\033[1;32m\033[F\033[F
@@ -25,7 +25,7 @@ If you found this code useful, add a star on <https://github.com/louisabraham/ff
 
 import sys
 from base64 import b64decode, b64encode
-from hashlib import sha1
+from hashlib import sha1, pbkdf2_hmac
 import hmac
 import argparse
 import json
@@ -42,7 +42,7 @@ import os.path
 from pyasn1.codec.der.decoder import decode as der_decode
 from pyasn1.codec.der.encoder import encode as der_encode
 from pyasn1.type.univ import Sequence, OctetString, ObjectIdentifier
-from Crypto.Cipher import DES3
+from Crypto.Cipher import AES, DES3
 
 
 MAGIC1 = b"\xf8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01"
@@ -74,44 +74,64 @@ def _msg(message):
 
 def getKey(directory: Path, masterPassword=""):
     dbfile: Path = directory / "key4.db"
+
     if not dbfile.exists():
         raise NoDatabase()
-    # firefox 58.0.2 / NSS 3.35 with key4.db in SQLite
+
     conn = sqlite3.connect(dbfile.as_posix())
     c = conn.cursor()
-    # first check password
-    c.execute("SELECT item1,item2 FROM metadata WHERE id = 'password';")
+    c.execute("""
+        SELECT item1, item2
+        FROM metadata
+        WHERE id = 'password';
+    """)
     row = next(c)
-    globalSalt = row[0]  # item1
-    item2 = row[1]
-    decodedItem2, _ = der_decode(item2)
-    entrySalt = decodedItem2[0][1][0].asOctets()
-    cipherT = decodedItem2[1].asOctets()
-    clearText = decrypt3DES(
-        globalSalt, masterPassword, entrySalt, cipherT
-    )  # usual Mozilla PBE
+    globalSalt, item2 = row
+
+    try:
+        decodedItem2, _ = der_decode(item2)
+        encryption_method = '3DES'
+        entrySalt = decodedItem2[0][1][0].asOctets()
+        cipherT = decodedItem2[1].asOctets()
+        clearText = decrypt3DES(
+            globalSalt, masterPassword, entrySalt, cipherT
+        )  # usual Mozilla PBE
+    except AttributeError:
+        encryption_method = 'AES'
+        decodedItem2 = der_decode(item2)
+        clearText = decrypt_aes(decodedItem2, masterPassword, globalSalt)
+
     if clearText != b"password-check\x02\x02":
         raise WrongPassword()
 
     _msg("password checked")
 
     # decrypt 3des key to decrypt "logins.json" content
-    c.execute("SELECT a11,a102 FROM nssPrivate;")
-    for row in c:
-        if row[1] == MAGIC1:
-            a11 = row[0]  # CKA_VALUE
-            break
-    else:
+    c.execute("""
+        SELECT a11, a102
+        FROM nssPrivate
+        WHERE a102 = ?;
+    """, (MAGIC1,))
+    try:
+        row = next(c)
+        a11, a102 = row  # CKA_ID
+    except StopIteration:
         raise Exception(
             "The Firefox database appears to be broken. Try to add a password to rebuild it."
         )  # CKA_ID
-    decodedA11, _ = der_decode(a11)
-    oid = decodedA11[0][0].asTuple()
-    assert oid == MAGIC3, f"The key is encoded with an unknown format {oid}"
-    entrySalt = decodedA11[0][1][0].asOctets()
-    cipherT = decodedA11[1].asOctets()
-    key = decrypt3DES(globalSalt, masterPassword, entrySalt, cipherT)
-    _msg("3deskey: " + key.hex())
+
+    if encryption_method == 'AES':
+        decodedA11 = der_decode(a11)
+        key = decrypt_aes(decodedA11, masterPassword, globalSalt)
+    elif encryption_method == '3DES':
+        decodedA11, _ = der_decode(a11)
+        oid = decodedA11[0][0].asTuple()
+        assert oid == MAGIC3, f"The key is encoded with an unknown format {oid}"
+        entrySalt = decodedA11[0][1][0].asOctets()
+        cipherT = decodedA11[1].asOctets()
+        key = decrypt3DES(globalSalt, masterPassword, entrySalt, cipherT)
+
+    _msg("{}: {}".format(encryption_method, key.hex()))
     return key[:24]
 
 
@@ -122,6 +142,23 @@ def PKCS7pad(b):
 
 def PKCS7unpad(b):
     return b[: -b[-1]]
+
+
+def decrypt_aes(decoded_item, master_password, global_salt):
+    entry_salt = decoded_item[0][0][1][0][1][0].asOctets()
+    iteration_count = int(decoded_item[0][0][1][0][1][1])
+    key_length = int(decoded_item[0][0][1][0][1][2])
+    assert key_length == 32
+
+    encoded_password = sha1(global_salt + master_password.encode('utf-8')).digest()
+    key = pbkdf2_hmac(
+        'sha256', encoded_password,
+        entry_salt, iteration_count, dklen=key_length)
+
+    init_vector = b'\x04\x0e' + decoded_item[0][0][1][1][1].asOctets()
+    encrypted_value = decoded_item[0][1].asOctets()
+    cipher = AES.new(key, AES.MODE_CBC, init_vector)
+    return cipher.decrypt(encrypted_value)
 
 
 def decrypt3DES(globalSalt, masterPassword, entrySalt, encryptedData):
@@ -236,31 +273,32 @@ def addNewLogins(key, jsonLogins, logins):
 
 def guessDir():
     dirs = {
-        "darwin": "~/Library/Application Support/Firefox",
+        "darwin": "~/Library/Application Support/Firefox/Profiles",
         "linux": "~/.mozilla/firefox",
-        "win32": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox"),
-        "cygwin": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox"),
+        "win32": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox\Profiles"),
+        "cygwin": os.path.expandvars(r"%LOCALAPPDATA%\Mozilla\Firefox\Profiles"),
     }
 
     if sys.platform not in dirs:
-        _msg(f"Automatic profile selection not supported for {sys.platform}")
+        _msg(f"Automatic profile selection is not supported for {sys.platform}")
         return
 
     paths = Path(dirs[sys.platform]).expanduser()
     profiles = [path.parent for path in paths.glob(os.path.join("*", "logins.json"))]
 
     if len(profiles) == 0:
-        _err("Cannot find any Firefox profile")
+        _err("Cannot find any Firefox profiles")
         return
 
     if len(profiles) > 1:
-        _msg("There is more than one profile")
+        _msg("More than one profile detected. Please specify a profile to parse (-d path/to/profile)")
+        _msg("valid profiles:\n\t" + '\n\t'.join(map(str, profiles)))
         return
 
     profile_path = profiles[0]
 
     _msg(f"Using profile: {profile_path}")
-    return profiles[0]
+    return profile_path
 
 
 def askpass(directory):
@@ -357,8 +395,8 @@ def makeParser(required_dir):
 def main():
     global args
     args = makeParser(False).parse_args()
-    guessed_dir = guessDir()
     if args.directory is None:
+        guessed_dir = guessDir()
         if guessed_dir is None:
             args = makeParser(True).parse_args()
         else:
