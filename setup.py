@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name="ffpass",
-    version="0.4.8",
+    version="0.5.0",
     author="Louis Abraham",
     license="MIT",
     author_email="louis.abraham@yahoo.fr",
