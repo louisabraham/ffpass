@@ -230,8 +230,15 @@ def lower_header(csv_file):
 def readCSV(csv_file):
     logins = []
     reader = csv.DictReader(lower_header(csv_file))
-    for row in reader:
-        logins.append((rawURL(row["url"]), row["username"], row["password"]))
+    try:
+        for row in reader:
+            url = row["url"] if "url" in row else row["login_uri"]
+            username = row["username"] if "username" in row else row["login_username"]
+            password = row["password"] if "password" in row else row["login_password"]
+            logins.append((rawURL(url), username, password))
+    except KeyError as e:
+        logging.error(f"key not found {e.args[0]}")
+        sys.exit(1)
     logging.info(f'read {len(logins)} logins')
     return logins
 
@@ -306,7 +313,7 @@ def askpass(directory):
         try:
             key = getKey(directory, password)
         except WrongPassword:
-            password = getpass("Master Password:")
+            password = getpass("Master Password: ")
         else:
             break
     return key
