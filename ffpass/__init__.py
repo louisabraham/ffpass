@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
+
+# Reverse-engineering by Laurent Clevy (@lclevy)
+# from https://github.com/lclevy/firepwd/blob/master/firepwd.py
+
 """
 The MIT License (MIT)
 Copyright (c) 2018 Louis Abraham <louis.abraham@yahoo.fr>
-
+Laurent Clevy (@lorenzo2472)
+# from https://github.com/lclevy/firepwd/blob/master/firepwd.py
 \x1B[34m\033[F\033[F
 
 ffpass can import and export passwords from Firefox Quantum.
