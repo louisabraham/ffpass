@@ -70,7 +70,7 @@ class NoProfile(Exception):
     pass
 
 
-def getKey(directory: Path, masterPassword=""):
+def getKey(directory: Path, primary_password=""):
     dbfile: Path = directory / "key4.db"
 
     if not dbfile.exists():
@@ -92,12 +92,12 @@ def getKey(directory: Path, masterPassword=""):
         entrySalt = decodedItem2[0][1][0].asOctets()
         cipherT = decodedItem2[1].asOctets()
         clearText = decrypt3DES(
-            globalSalt, masterPassword, entrySalt, cipherT
+            globalSalt, primary_password, entrySalt, cipherT
         )  # usual Mozilla PBE
     except AttributeError:
         encryption_method = 'AES'
         decodedItem2 = der_decode(item2)
-        clearText = decrypt_aes(decodedItem2, masterPassword, globalSalt)
+        clearText = decrypt_aes(decodedItem2, primary_password, globalSalt)
 
     if clearText != b"password-check\x02\x02":
         raise WrongPassword()
@@ -120,14 +120,14 @@ def getKey(directory: Path, masterPassword=""):
 
     if encryption_method == 'AES':
         decodedA11 = der_decode(a11)
-        key = decrypt_aes(decodedA11, masterPassword, globalSalt)
+        key = decrypt_aes(decodedA11, primary_password, globalSalt)
     elif encryption_method == '3DES':
         decodedA11, _ = der_decode(a11)
         oid = decodedA11[0][0].asTuple()
         assert oid == MAGIC3, f"The key is encoded with an unknown format {oid}"
         entrySalt = decodedA11[0][1][0].asOctets()
         cipherT = decodedA11[1].asOctets()
-        key = decrypt3DES(globalSalt, masterPassword, entrySalt, cipherT)
+        key = decrypt3DES(globalSalt, primary_password, entrySalt, cipherT)
 
     logging.info("{}: {}".format(encryption_method, key.hex()))
     return key[:24]
@@ -142,13 +142,13 @@ def PKCS7unpad(b):
     return b[: -b[-1]]
 
 
-def decrypt_aes(decoded_item, master_password, global_salt):
+def decrypt_aes(decoded_item, primary_password, global_salt):
     entry_salt = decoded_item[0][0][1][0][1][0].asOctets()
     iteration_count = int(decoded_item[0][0][1][0][1][1])
     key_length = int(decoded_item[0][0][1][0][1][2])
     assert key_length == 32
 
-    encoded_password = sha1(global_salt + master_password.encode('utf-8')).digest()
+    encoded_password = sha1(global_salt + primary_password.encode('utf-8')).digest()
     key = pbkdf2_hmac(
         'sha256', encoded_password,
         entry_salt, iteration_count, dklen=key_length)
@@ -159,8 +159,8 @@ def decrypt_aes(decoded_item, master_password, global_salt):
     return cipher.decrypt(encrypted_value)
 
 
-def decrypt3DES(globalSalt, masterPassword, entrySalt, encryptedData):
-    hp = sha1(globalSalt + masterPassword.encode()).digest()
+def decrypt3DES(globalSalt, primary_password, entrySalt, encryptedData):
+    hp = sha1(globalSalt + primary_password.encode()).digest()
     pes = entrySalt + b"\x00" * (20 - len(entrySalt))
     chp = sha1(hp + entrySalt).digest()
     k1 = hmac.new(chp, pes + entrySalt, sha1).digest()
