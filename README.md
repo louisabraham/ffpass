@@ -186,5 +186,3 @@ ffpass export --file passwords.csv
 
 Thanks a lot to @lclevy for the retro-engineering\! I was inspired by
 his repository <https://github.com/lclevy/firepwd>.
-
-Support of the last version of Firefox and unit tests are the great work of @lmcclell.
