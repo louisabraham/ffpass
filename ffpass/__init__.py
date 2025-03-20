@@ -248,10 +248,16 @@ def rawURL(url):
     return type(p)(*p[:2], *[""] * 4).geturl()
 
 
-def addNewLogins(key, jsonLogins, logins):
+def addNewLogins(key, jsonLogins, logins, overwrite=False):
     nextId = jsonLogins["nextId"]
     timestamp = int(datetime.now().timestamp() * 1000)
     logging.info('adding logins')
+    existing = {}
+    for i, entry in enumerate(jsonLogins["logins"]):
+        existing[entry["hostname"] + "##" + decodeLoginData(key, entry["encryptedUsername"])] = {
+            "index": i,
+            "password": decodeLoginData(key, entry["encryptedPassword"])
+        }
     for i, (url, username, password) in enumerate(logins, nextId):
         logging.debug(f'adding {url} {username}')
         entry = {
@@ -270,7 +276,15 @@ def addNewLogins(key, jsonLogins, logins):
             "timePasswordChanged": timestamp,
             "timesUsed": 0,
         }
-        jsonLogins["logins"].append(entry)
+        if url + "##" + username in existing:
+            if password == existing[url + "##" + username]["password"]:
+                pass # just skip, the same password already exists in the database
+            elif overwrite:
+                jsonLogins["logins"][existing[url + "##" + username]["index"]] = entry
+            else:
+                logging.warning(f"An entry already exists for '{username}' on host '{url}' with a different password. You can specify --overwrite to force an update.") 
+        else:
+            jsonLogins["logins"].append(entry)
     jsonLogins["nextId"] += len(logins)
 
 
@@ -345,7 +359,7 @@ def main_import(args):
         key = askpass(args.directory)
     jsonLogins = getJsonLogins(args.directory)
     logins = readCSV(args.file)
-    addNewLogins(key, jsonLogins, logins)
+    addNewLogins(key, jsonLogins, logins, args.overwrite)
     dumpJsonLogins(args.directory, jsonLogins)
 
 
@@ -393,13 +407,15 @@ def makeParser():
         sub.add_argument("-v", "--verbose", action="store_true")
         sub.add_argument("--debug", action="store_true")
 
+    parser_import.add_argument("--overwrite", action="store_true")
+
     parser_import.set_defaults(func=main_import)
     parser_export.set_defaults(func=main_export)
     return parser
 
 
 def main():
-    logging.basicConfig(level=logging.ERROR, format="%(levelname)s: %(message)s")
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
     parser = makeParser()
     args = parser.parse_args()
@@ -409,7 +425,7 @@ def main():
     elif args.debug:
         log_level = logging.DEBUG
     else:
-        log_level = logging.ERROR
+        log_level = logging.WARNING
 
     logging.getLogger().setLevel(log_level)
 
