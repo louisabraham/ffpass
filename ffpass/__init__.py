@@ -214,6 +214,8 @@ def exportLogins(key, jsonLogins):
         return []
     logins = []
     for row in jsonLogins["logins"]:
+        if row.get("deleted"):
+            continue
         encUsername = row["encryptedUsername"]
         encPassword = row["encryptedPassword"]
         logins.append(
